@@ -16,6 +16,20 @@ namespace Infrastructure.Data
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+            
+            // Workaound for SQLite to convert decimal to double since SQLite doesn't support decimal
+            if (Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
+            {
+                foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+                {
+                    var properties = entityType.ClrType.GetProperties().Where(P => P.PropertyType == typeof(decimal));
+
+                    foreach (var prop in properties)
+                    {
+                        modelBuilder.Entity(entityType.Name).Property(prop.Name).HasConversion<double>();
+                    }
+                }
+            }
         }
     }
 }
